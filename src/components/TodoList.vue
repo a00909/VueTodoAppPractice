@@ -80,50 +80,7 @@ export default {
       todoCardKey: 2,
       newTodo: '',
       title: 'TodoList',
-      cards: [
-        {
-          id: 0,
-          title: '標題1',
-          editTitle: false,
-          newItemContent: '',
-          itemKeyCounter: 2,
-          items: [
-            {
-              id: 0,
-              content: '內容1',
-              editContent: false,
-              completed: false
-            },
-            {
-              id: 1,
-              content: '內容2',
-              editContent: false,
-              completed: false
-            }
-          ]
-        },
-        {
-          id: 1,
-          title: '標題2',
-          editTitle: false,
-          newItemContent: '',
-          itemKeyCounter: 2,
-          items: [
-            {
-              id: 0,
-              content: '內容1',
-              editContent: false,
-              completed: false
-            },
-            {
-              id: 1,
-              content: '內容2',
-              editContent: false,
-              completed: false
-            }
-          ]
-        }
-      ]
+      cards: todoStorage.fetch()
     }
   },
   directives: {
@@ -133,6 +90,7 @@ export default {
       }
     }
   },
+  /*
   watch: {// watch todos change for localStorage persistence
     cards: {
       handler: function (cards) {
@@ -141,7 +99,17 @@ export default {
       deep: true
     }
   },
+  */
+  created () {
+    window.addEventListener('beforeunload', this.saveTodos)
+  },
+  destroyed () {
+    window.removeEventListener('beforeunload', this.saveTodos)
+  },
   methods: {
+    saveTodos () {
+      todoStorage.save(this.cards)
+    },
     addTodo () {
       if (this.newTodo.trim().length === 0) {
         return
