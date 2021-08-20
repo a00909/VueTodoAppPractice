@@ -11,7 +11,7 @@
     />
     <div v-for="(card, cardIndex) in cards" :key="card.id" class="todo-cards">
       <div class="todo-card">
-        <div v-if="!card.editTitle" v-text="card.title" class="todo-title" @dblclick="editTodoTitle(card)"></div>
+        <div v-if="!card.editTitle" v-text="card.title" class="todo-title" @dblclick="editTodoTitle(card)"/>
         <input
           v-else
           class="todo-title-edit"
@@ -20,13 +20,19 @@
           @keyup.enter="finishEditTodoTitle(card)"
           @blur="finishEditTodoTitle(card)"
           @keyup.esc="cancelEditTodoTitle(card)"
-          v-focus
-        />
+          v-focus/>
         <div class='remove-card' @click="removeCard(cardIndex)">
             &times;
         </div>
         <div v-for="(item, itemIndex) in card.items" :key="item.id" class="todo-contents">
-          <div v-if="!item.editContent" v-text="item.content" class="todo-content" @dblclick="editTodoContent(item)"></div>
+          <input type="checkbox" v-model="item.completed"/>
+          <div
+            v-if="!item.editContent"
+            v-text="item.content"
+            class="todo-content"
+            :class="{ completed:item.completed }"
+            @dblclick="editTodoContent(item)"
+            @click="toggleContentCompleted(item)"/>
           <input
             v-else
             class="todo-content-edit"
@@ -35,8 +41,7 @@
             @keyup.enter="finishEditTodoContent(item)"
             @blur="finishEditTodoContent(item)"
             @keyup.esc="cancelEditTodoContent(item)"
-            v-focus
-          />
+            v-focus/>
           <div class='remove-item' @click="removeContent(cardIndex,itemIndex)">
             &times;
           </div>
@@ -45,22 +50,34 @@
             class="new-content"
             placeholder="Add new todos"
             v-model="cards[cardIndex].newItemContent"
-            @keyup.enter="addTodoContent(cardIndex)"
-        />
+            @keyup.enter="addTodoContent(cardIndex)"/>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+var STORAGE_KEY = 'todos-vuejs-2.0'
+var todoStorage = {
+  fetch: function () {
+    var todos = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
+    todos.forEach(function (todo, index) {
+      todo.id = index
+    })
+    todoStorage.uid = todos.length
+    return todos
+  },
+  save: function (todos) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(todos))
+  }
+}
 export default {
   name: 'TodoList',
   data () {
     return {
       cardTitleBeforeEdit: '',
-      newTodoContents: ['', ''],
+      cardContentBeforeEdit: '',
       todoCardKey: 2,
-      todoContentKeys: [2, 2],
       newTodo: '',
       title: 'TodoList',
       cards: [
@@ -74,12 +91,14 @@ export default {
             {
               id: 0,
               content: '內容1',
-              editContent: false
+              editContent: false,
+              completed: false
             },
             {
               id: 1,
               content: '內容2',
-              editContent: false
+              editContent: false,
+              completed: false
             }
           ]
         },
@@ -93,12 +112,14 @@ export default {
             {
               id: 0,
               content: '內容1',
-              editContent: false
+              editContent: false,
+              completed: false
             },
             {
               id: 1,
               content: '內容2',
-              editContent: false
+              editContent: false,
+              completed: false
             }
           ]
         }
@@ -110,6 +131,14 @@ export default {
       inserted: function (el) {
         el.focus()
       }
+    }
+  },
+  watch: {// watch todos change for localStorage persistence
+    cards: {
+      handler: function (cards) {
+        todoStorage.save(cards)
+      },
+      deep: true
     }
   },
   methods: {
@@ -141,7 +170,8 @@ export default {
       this.cards[cardIndex].items.push({
         id: this.cards[cardIndex].itemKeyCounter,
         content: this.cards[cardIndex].newItemContent,
-        editContent: false
+        editContent: false,
+        completed: false
       })
       this.cards[cardIndex].itemKeyCounter++
       this.cards[cardIndex].newItemContent = ''
@@ -156,6 +186,20 @@ export default {
     cancelEditTodoTitle (card) {
       card.title = this.cardTitleBeforeEdit
       this.finishEditTodoTitle(card)
+    },
+    editTodoContent (item) {
+      item.editContent = true
+      this.cardContentBeforeEdit = item.content
+    },
+    finishEditTodoContent (item) {
+      item.editContent = false
+    },
+    cancelEditTodoContent (item) {
+      item.content = this.cardContentBeforeEdit
+      this.finishEditTodoContent(item)
+    },
+    toggleContentCompleted (item) {
+      item.completed = !item.completed
     }
   }
 }
@@ -166,13 +210,14 @@ export default {
 .todo-list {
   margin: auto;
   width: 60%;
-  border: 3px solid green;
+  border: 3px solid rgba(198, 216, 193, 0.788);
+  border-radius: 25px;
 }
 .new-todo {
-  width: 100%;
+  width: 90%;
   padding: 10px 18px;
   font-size: 18px;
-  margin-bottom: 16 px;
+  margin-bottom: 16px;
 
   &:focus {
     outline: 0;
@@ -180,7 +225,6 @@ export default {
 }
 .todo-list-cards {
   outline: 1px;
-
 }
 .todo-cards {
   text-align: left;
@@ -189,7 +233,9 @@ input{
   box-sizing:border-box
 }
 .todo-card {
-  border: 3px solid green;
+  border: 3px solid rgba(84, 214, 106, 0.74);
+  border-radius: 15px;
+  margin: 5px;
 }
 .todo-title {
   display: inline-block;
@@ -229,5 +275,9 @@ input{
 .new-content {
   font-size: 16px;
   margin-left: 13px;
+}
+.completed {
+  text-decoration: line-through;
+  color: gray;
 }
 </style>
